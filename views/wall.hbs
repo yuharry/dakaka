@@ -86,6 +86,7 @@
 	<script>
 		(function(w, d) {
 			var map, init, loadActivitys, loClick, newClick, mapBounds, displayActivity,
+				hereMarker,
 				activityList = {},
 				markerList = {},
 				infoList = {},
@@ -94,9 +95,9 @@
 			mapBounds = new google.maps.LatLngBounds();
 			init = function() {
 				var mapOptions = {
-					// zoom: 18,
-					mapTypeId: google.maps.MapTypeId.ROADMAP
-					// center: new google.maps.LatLng(24.801071, 120.979498)
+					zoom: 7,
+					mapTypeId: google.maps.MapTypeId.ROADMAP,
+					center: new google.maps.LatLng(23.6465243,120.9978781)
 				};
 				map = new google.maps.Map(document.getElementById("map_canvas"),
 					mapOptions);
@@ -113,6 +114,30 @@
 					dataType: 'json',
 					contentType: 'application/json'
 				}).done(function(data) {
+					var geo = navigator.geolocation,
+						browserGeoSupport = false,
+						here;
+					if (geo) {
+						browserGeoSupport = true;
+						geo.getCurrentPosition(function(position) {
+							here = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+							hereMarker = new google.maps.Marker({
+								position: here,
+								map: map,
+								title: 'I\'m here!',
+							});
+
+							if (!data || !data.length) {
+								if (hereMarker) {
+									map.setCenter(here);
+									map.setZoom(16);
+								}
+							}
+						});
+					}
+					if(!data || !data.length) {
+						return;
+					}
 					for (var i = 0; i < data.length; i++) {
 						var activity = data[i],
 							location = activity.place.geometry.location,
@@ -132,7 +157,7 @@
 
 						mapBounds.extend(location);
 					}
-					console.log(activityList);
+					// console.log(activityList);
 					map.setCenter(mapBounds.getCenter());
 					map.fitBounds(mapBounds);
 				});
@@ -156,12 +181,14 @@
 			};
 
 			showInfo = function(marker) {
-				var _id = marker._id, info = infoList[_id], activity = activityList[marker._id];
+				var _id = marker._id,
+					info = infoList[_id],
+					activity = activityList[marker._id];
 				// console.log(marker._id);
-				if(!info) {
+				if (!info) {
 					var infoContent = '<div class="activity"><img src="http://graph.facebook.com/{{fbId}}/picture" class="userHead"/><div class="title"><h5>' + activity.place.name +
-					' <span class="label success radius">$ ' + activity.amount + '</span></h5><small>' +
-					activity.date + '</small></div><textarea readonly>' + (activity.saying || '') + '</textarea></div>';
+						' <span class="label success radius">$ ' + activity.amount + '</span></h5><small>' +
+						activity.date + '</small></div><textarea readonly>' + (activity.saying || '') + '</textarea></div>';
 					info = new google.maps.InfoWindow({
 						content: infoContent
 					});
@@ -173,8 +200,8 @@
 			};
 
 			closeAllInfo = function() {
-				for(var prop in infoList) {
-					if(! infoList.hasOwnProperty(prop)) {
+				for (var prop in infoList) {
+					if (!infoList.hasOwnProperty(prop)) {
 						continue;
 					}
 					infoList[prop].close();

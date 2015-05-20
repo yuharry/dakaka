@@ -24,7 +24,9 @@ module.exports = function() {
 		if (_id) {
 			res.redirect('/');
 		} else {
-			res.render('login');
+			res.render('login', {
+				FB_ID: process.env.FB_ID
+			});
 		}
 	});
 
@@ -56,7 +58,7 @@ module.exports = function() {
 		}
 
 		res.render('daka', {
-			
+
 		});
 	});
 
