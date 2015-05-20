@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<title>DAKAKA - add a new activity</title>
+	<link rel="stylesheet" href="assets/foundation/css/foundation.css">
+	<link rel="stylesheet" href="assets/foundation-icon-fonts/foundation-icons.css">
+	<style type="text/css">
+		#map_canvas {
+			/* position: absolute; */
+			/* margin-top: 100px; */
+			/* top: 0; */
+			/* left: 0; */
+			/*bottom: 0;*/
+
+			width: 100%;
+			height: 60%;
+		}
+
+		#actInfo {
+			/* position: absolute; */
+			/* top: 10%; */
+			/* left: 15%; */
+		}
+
+		#actInfo .button,
+		#actInfo input {
+			margin-bottom: 0.2rem;
+			height: 2.3125rem;
+		}
+
+		#actInfo input {
+			padding: 0.875rem 1.75rem 0.9375rem 1.75rem;
+			font-size: 0.8125rem;
+		}
+
+		.sel {
+			max-width: 100%;
+			width: 100% !important;
+			height: 300px;
+			overflow: auto;
+		}
+
+		.sel:after,
+		.sel:before {
+			display: none;
+		}
+		/* 		@media only screen and (max-width: 40em) {
+	.sel {
+		margin-left: -8px !important;
+	}
+}
+ */
+	</style>
+</head>
+
+<body>
+
+	<nav class="top-bar foundation-bar nav" data-topbar>
+		<ul class="title-area">
+			<li class="name">
+				<span data-tooltip class="has-tip" title="dakaka">
+					<h1><a href="javascript:;">DAKAKA</a></h1>
+				</span>
+			</li>
+		</ul>
+		<section class="top-bar-section">
+			<ul class="left">
+				<li><a href="javascript:void(0);" onclick="cancelClick();">[ cancel ]</a></li>
+			</ul>
+		</section>
+	</nav>
+
+	<div id="actInfo">
+		<div class="row collapse">
+			<div class="small-12 columns">
+				<div style="position:relative;">
+					<button id="pBtn" class="button secondary dropdown expand small" data-dropdown="nears" aria-controls="nears" aria-expanded="false"> Here I am. </button>
+					<div id="nears" data-dropdown-content class="f-dropdown sel active" aria-hidden="true">
+						<li><a href="javascript:;">waiting...</a></li>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row collapse">
+			<div class="small-1 columns">
+				<label for="amount" class="prefix button small"><i class="fi-dollar" style="font-size:2em;"></i></label>
+			</div>
+			<div class="small-11 columns">
+				<input type="text" id="amount" placeholder="Spent Money. ">
+			</div>
+		</div>
+		<div class="row collapse">
+			<div class="small-12 columns">
+				<button class="button expand small" onclick="save()">Add</button>
+			</div>
+		</div>
+		<div class="row collapse">
+			<textarea placeholder="say some thing..." rows="2" id="saying"></textarea>
+		</div>
+	</div>
+	<div id="validateFailDialog" class="reveal-modal" role="dialog" data-reveal>
+		<h4>Input Error</h4>
+		<ul id="errorList"></ul>
+		<button class="button" onclick="javascript: $('#validateFailDialog').foundation('reveal', 'close');">Close</button>
+		<a class="close-reveal-modal" aria-label="Close">&#215;</a>
+	</div>
+	<div id="map_canvas"></div>
+	<script src="assets/modernizr/modernizr.js"></script>
+	<script src="assets/jquery/dist/jquery.js"></script>
+	<script src="assets/jquery.cookie/jquery.cookie.js"></script>
+	<script src="assets/foundation/js/foundation.js"></script>
+	<script src="http://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyCu1fLSrckJAql2HsV3UfYxVE2q_bAcme8&sensor=true"></script>
+	<script>
+		var here, map, hereMarker, save, geoAddr, displayAddr, nearResults, placeService, selectPlace, place, amountValidate, dataValidate;
+		geocoder = new google.maps.Geocoder();
+
+		save = function() {
+			var data = dataValidate();
+			if (!data) {
+				$('#validateFailDialog').foundation('reveal', 'open');
+				return;
+			}
+
+			$.ajax({
+				url: '/api/activity',
+				method: 'post',
+				dataType: 'json',
+				contentType: 'application/json',
+				data: JSON.stringify({
+					activity: {
+						place: place,
+						amount: $('#amount').val(),
+						saying: $('#saying').val(),
+						date: new Date()
+					}
+				})
+			}).done(function(data) {
+				console.log(data);
+				alert('done');
+				window.location.href = '/wall';
+			});
+		};
+		dataValidate = function() {
+			var amount = $('#amount').val(),
+				saying = $('#saying').val(),
+				eList = $('#errorList');
+			eFlag = false;
+
+			eList.html('');
+
+			if (!place) {
+				eFlag = true;
+				eList.append('<li>Place Error</li>');
+			}
+
+			if ('' === amount || isNaN(amount)) {
+				console.log('error amount');
+				eFlag = true;
+				eList.append('<li>Amount Error</li>');
+			}
+
+			if (eFlag) {
+				return false;
+			}
+
+			return {
+				activity: {
+					place: place,
+					amount: amount,
+					saying: saying,
+					date: new Date()
+				}
+			};
+		};
+		geoAddr = function(pos) {
+			geocoder.geocode({
+				latLng: pos
+			}, function(resp) {
+				if (!resp || !resp.length) {
+					return displayAddr('Cannot determine where you are');
+				}
+
+				displayAddr(resp[0].formatted_address);
+			});
+		}
+
+		displayAddr = function(addr) {
+			$('#addrInput').val(addr);
+		}
+
+		selectPlace = function(index) {
+			place = nearResults[index];
+
+			$('#pBtn').text(place.name + ', ' + place.vicinity);
+			if (hereMarker) {
+				hereMarker.setMap(null);
+				hereMarker = null;
+			}
+
+			hereMarker = new google.maps.Marker({
+				position: place.geometry.location,
+				map: map,
+				icon: 'data:image/png;base64,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'
+			});
+
+			map.setCenter(place.geometry.location);
+		};
+
+		amountValidate = function(event) {
+			var evt = event || window.event,
+				key = String.fromCharCode(evt.keyCode || evt.which);
+			if (!/[0-9]|\./.test(key)) {
+				evt.returnValue = false;
+
+				if (typeof evt.preventDefault === 'function') {
+					evt.preventDefault();
+				}
+			}
+
+
+		};
+
+		function cancelClick() {
+			window.location.href = '/wall';
+		}
+
+		window.amountValidate = amountValidate;
+
+		function initialize() {
+			var mapOptions = {
+				//center: new google.maps.LatLng(24.801071, 120.979498),
+				zoom: 16,
+				mapTypeId: google.maps.MapTypeId.ROADMAP
+			};
+			map = new google.maps.Map(document.getElementById("map_canvas"),
+				mapOptions);
+			$(document).foundation();
+			placeService = new google.maps.places.PlacesService(map);
+
+			if (navigator.geolocation) {
+				// browserSupportFlag = true;
+				navigator.geolocation.getCurrentPosition(function(position) {
+					here = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+					//here = new google.maps.LatLng(24.801071, 120.979498);
+					here = new google.maps.LatLng(24.8601314, 120.9736845);
+					map.setCenter(here);
+
+					new google.maps.Marker({
+						position: here,
+						map: map,
+						title: 'I\'m here!',
+						//draggable: true
+					});
+
+					geoAddr(here);
+
+					// google.maps.event.addListener(hereMarker, 'dragend', function() {
+					// 	geoAddr(hereMarker.getPosition());
+					// });
+
+					placeService.search({
+						location: here,
+						radius: '500',
+						types: []
+					}, function(results, status) {
+						if (status == google.maps.places.PlacesServiceStatus.OK) {
+							$('#nears').html('');
+							nearResults = results;
+							for (var i = 0; i < results.length; i++) {
+								var place = results[i];
+
+								$('#nears').append('<li><a href="javascript:;" onclick="selectPlace( ' + i + ' )">' + place.name + ', ' + place.vicinity + '</a></li>')
+							}
+						}
+
+						// console.log('placesService done');
+					});
+				}, function() {
+
+					// handleNoGeolocation(browserSupportFlag);
+				});
+			}
+			// Browser doesn't support Geolocation
+			else {
+				// browserSupportFlag = false;
+				// handleNoGeolocation(browserSupportFlag);
+			}
+
+
+		}
+
+		initialize();
+		$('#pBtn').click();
+	</script>
+</body>
+
+</html>

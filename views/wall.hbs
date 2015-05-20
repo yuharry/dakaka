@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+	{{> common_metas}}
+	<title>DAKAKA</title>
+	<link rel="stylesheet" href="/assets/foundation/css/foundation.css">
+	<link rel="stylesheet" href="/assets/foundation-icon-fonts/foundation-icons.css">
+	<style>
+		.wall-content {
+			position: fixed;
+			top: 45px;
+			left: 0;
+			bottom: 0;
+			width: 40%;
+			padding: 5px 5px;
+			overflow-y: scroll;
+			background: #f7f7f7;
+		}
+
+		.wall-content .activity {
+			padding-top: 10px;
+			padding-bottom: 10px;
+		}
+
+		.activity .userHead {
+			float: left;
+		}
+
+		.activity .title {
+			margin-left: 60px;
+		}
+
+		@media only screen and (max-width: 40em) {
+			.wall-content {
+				width: 100%;
+			}
+		}
+
+		.map-content {
+			position: fixed;
+			top: 45px;
+			right: 0;
+			left: auto;
+			bottom: 0;
+			width: 60%;
+		}
+
+		#map_canvas {
+			height: 100%;
+			width: 100%;
+		}
+	</style>
+</head>
+
+<body>
+
+	<nav class="top-bar foundation-bar nav" data-topbar>
+		<ul class="title-area">
+			<li class="name">
+				<span data-tooltip class="has-tip" title="dakaka">
+					<h1><a href="javascript:;">DAKAKA</a></h1>
+				</span>
+			</li>
+		</ul>
+		<section class="top-bar-section">
+			<ul class="left">
+				<li><a href="javascript:void(0);" onclick="newClick();">[ da ka ]</a></li>
+			</ul>
+			<ul class="right">
+				<li id="loBtn"><a href="javascript:;" onclick="loClick();">[ log out ]</a></li>
+			</ul>
+		</section>
+	</nav>
+	<div id="wall" class="wall-content">
+	</div>
+	<div class="map-content hide-for-small-only">
+		<div id="map_canvas"></div>
+	</div>
+
+	<script src="/assets/modernizr/modernizr.js"></script>
+	<script src="/assets/jquery/dist/jquery.js"></script>
+	<script src="/assets/jquery.cookie/jquery.cookie.js"></script>
+	<script src="/assets/foundation/js/foundation.js"></script>
+	<script src="http://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyCu1fLSrckJAql2HsV3UfYxVE2q_bAcme8&sensor=true"></script>
+	<script>
+		(function(w, d) {
+			var map, init, loadActivitys, loClick, newClick, mapBounds, displayActivity,
+				activityList = {},
+				markerList = {},
+				infoList = {},
+				centerMarker, showInfo, closeAllInfo;
+
+			mapBounds = new google.maps.LatLngBounds();
+			init = function() {
+				var mapOptions = {
+					// zoom: 18,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+					// center: new google.maps.LatLng(24.801071, 120.979498)
+				};
+				map = new google.maps.Map(document.getElementById("map_canvas"),
+					mapOptions);
+
+				loadActivitys();
+
+				$(d).foundation();
+			};
+
+			loadActivitys = function() {
+				$.ajax({
+					url: '/api/activity',
+					method: 'get',
+					dataType: 'json',
+					contentType: 'application/json'
+				}).done(function(data) {
+					for (var i = 0; i < data.length; i++) {
+						var activity = data[i],
+							location = activity.place.geometry.location,
+							marker;
+						activityList[activity._id] = activity;
+						displayActivity(activity);
+						location = new google.maps.LatLng(location.A, location.F);
+						markerList[activity._id] = marker = new google.maps.Marker({
+							position: location,
+							map: map,
+							_id: activity._id,
+							icon: 'data:image/png;base64,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'
+						});
+						google.maps.event.addListener(marker, 'click', function() {
+							showInfo(this);
+						});
+
+						mapBounds.extend(location);
+					}
+					console.log(activityList);
+					map.setCenter(mapBounds.getCenter());
+					map.fitBounds(mapBounds);
+				});
+			}
+
+			displayActivity = function(activity) {
+				var act = $(
+					'<div class="panel activity"><img src="http://graph.facebook.com/{{fbId}}/picture" class="userHead"/><div class="title"><h5><a href="javascript:centerMarker(\'' + activity._id + '\');">' + activity.place.name +
+					'</a> <span class="label success radius">$ ' + activity.amount + '</span></h5><small>' +
+					activity.date + '</small></div><textarea readonly>' + (activity.saying || '') + '</textarea></div>');
+				$('#wall').append(act);
+			};
+
+			centerMarker = function(_id) {
+				var marker = markerList[_id];
+				if (marker) {
+					map.setCenter(marker.getPosition());
+					showInfo(marker);
+					// console.log(marker);
+				}
+			};
+
+			showInfo = function(marker) {
+				var _id = marker._id, info = infoList[_id], activity = activityList[marker._id];
+				// console.log(marker._id);
+				if(!info) {
+					var infoContent = '<div class="activity"><img src="http://graph.facebook.com/{{fbId}}/picture" class="userHead"/><div class="title"><h5>' + activity.place.name +
+					' <span class="label success radius">$ ' + activity.amount + '</span></h5><small>' +
+					activity.date + '</small></div><textarea readonly>' + (activity.saying || '') + '</textarea></div>';
+					info = new google.maps.InfoWindow({
+						content: infoContent
+					});
+
+					infoList[_id] = info;
+				}
+				closeAllInfo();
+				info.open(map, marker);
+			};
+
+			closeAllInfo = function() {
+				for(var prop in infoList) {
+					if(! infoList.hasOwnProperty(prop)) {
+						continue;
+					}
+					infoList[prop].close();
+				}
+			};
+
+			loClick = function() {
+				$.cookie('_type', '', {
+					expires: -1
+				});
+				$.cookie('_id', '', {
+					expires: -1
+				});
+
+				w.location.href = '/login';
+			};
+
+			newClick = function() {
+				w.location.href = '/add';
+			};
+
+			w.newClick = newClick;
+			w.loClick = loClick;
+			w.centerMarker = centerMarker;
+			init();
+
+		})(window, document);
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+
+<head>
+	{{> common_metas}}
+	<title>DAKAKA</title>
+	<link rel="stylesheet" href="/assets/foundation/css/foundation.css">
+	<link rel="stylesheet" href="/assets/foundation-icon-fonts/foundation-icons.css">
+</head>
+
+<body>
+	<nav class="top-bar foundation-bar" data-topbar>
+		<ul class="title-area">
+			<li class="name">
+				<span data-tooltip class="has-tip" title="dakaka">
+					<h1><a href="javascript:void(0);">DAKAKA</a></h1>
+				</span>
+			</li>
+		</ul>
+		<!-- <section class="top-bar-section">
+			<ul class="right">
+				<li class="hide" id="loBtn"><a href="javascript:;" onclick="loClick();">log out</a></li>
+			</ul>
+		</section> -->
+	</nav>
+	<div>
+		<div class="row">
+			<div class="columns">
+				<h1>
+					<a id="lfBtn" class="button large expand" href="javascript:void(0);" onclick="lfClick();"><i class="fi-social-facebook"></i>&nbsp;login with facebook</a>
+				</h1>
+			</div>
+		</div>
+	</div>
+	<div id="successDialog" class="reveal-modal" role="dialog">
+		<h2>Login with Facebook Success!</h2>
+		<button class="button" onclick="goWall();">Enter</button>
+	</div>
+	<div id="fb-root"></div>
+	<script src="/assets/modernizr/modernizr.js"></script>
+	<script src="/assets/jquery/dist/jquery.js"></script>
+	<script src="/assets/jquery.cookie/jquery.cookie.js"></script>
+	<script src="/assets/foundation/js/foundation.js"></script>
+	<script>
+		(function ready(d, s, id) {
+			var js, fjs = d.getElementsByTagName(s)[0],
+				getFbInfoAndLogin;
+
+			getFbInfoAndLogin = function() {
+				FB.api('/me?fields=name,email', function(resp) {
+					console.log(resp);
+					jQuery.ajax({
+						url: '/api/user/fb/' + resp.id,
+						method: 'post',
+						dataType: 'json',
+						data: {
+							name: resp.name,
+							email: resp.email,
+						}
+					}).done(function(data) {
+						$.cookie('_type', 'fb', {
+							expires: 7,
+							path: '/'
+						});
+						$.cookie('_id', data._id, {
+							expires: 7,
+							path: '/'
+						});
+
+						$('#successDialog').foundation('reveal', 'open');
+					});
+				});
+
+			};
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId: '1441048539529351',
+					xfbml: true,
+					version: 'v2.3'
+				});
+
+			};
+
+			window.lfClick = function() {
+
+				FB.getLoginStatus(function(resp) {
+					if (resp.status !== 'connected') {
+						FB.login(function(resp) {
+							console.log(resp);
+							if (resp.status !== 'connected') {
+								alert('you don\'t want to login with facebook?');
+								return;
+							}
+							getFbInfoAndLogin();
+						}, {
+							scope: 'email,public_profile'
+						});
+					} else {
+						getFbInfoAndLogin();
+					}
+
+				});
+
+			};
+
+			window.loClick = function() {
+				$.cookie('_type', '', {
+					expires: -1
+				});
+				$.cookie('_id', '', {
+					expires: -1
+				});
+			};
+
+			window.goWall = function() {
+				window.location.href = '/';
+			};
+			if (d.getElementById(id)) {
+				return;
+			}
+			js = d.createElement(s);
+			js.id = id;
+			js.src = "//connect.facebook.net/en_US/sdk.js";
+			fjs.parentNode.insertBefore(js, fjs);
+
+			$(d).foundation();
+
+		}(document, 'script', 'facebook-jssdk'));
+	</script>
+</body>
+
+</html>

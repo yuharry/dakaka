@@ -1,0 +1,32 @@
+{
+	"name": "dakaka",
+	"version": "0.0.1",
+	"license": "MIT",
+	"private": true,
+	"ignore": [
+		"**/.*",
+		"node_modules",
+		"bower_components",
+		"test",
+		"tests"
+	],
+	"dependencies": {
+		"foundation": "~5.5.2",
+		"foundation-icon-fonts": "*"
+	},
+	"overrides": {
+		"modernizr": {
+			"main": "modernizr.js"
+		},
+		"foundation-icon-fonts": {
+			"main": [
+				"foundation-icons.css",
+				"foundation-icons.eot",
+				"foundation-icons.svg",
+				"foundation-icons.ttf",
+				"foundation-icons.woff"
+
+			]
+		}
+	}
+}
