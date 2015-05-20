@@ -31,7 +31,7 @@ module.exports = function() {
 
 			if (!res) {
 				userCol.insert(user, function(err, res) {
-					return callback(res.ops);
+					return callback(res.ops[0]);
 				});
 			} else {
 				return callback(res);
