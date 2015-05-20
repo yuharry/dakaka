@@ -1,20 +1,25 @@
 {
-  "name": "dakaka",
-  "version": "0.0.1",
-  "description": "",
-  "main": "test1.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+	"name": "dakaka",
+	"version": "0.0.1",
+	"description": "",
+	"main": "app.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"postinstall": "bower install && gulp bower-files",
+		"start": "iojs app.js"
+	},
+  "engines": {
+    "iojs": "1.8.1"
   },
-  "author": "yuharry <yhannya@gmail.com>",
-  "license": "BSD-2-Clause",
-  "dependencies": {
-    "cookie-parser": "^1.3.4",
-    "express": "^4.12.3",
-    "express-handlebars": "^2.0.1",
-    "gulp": "^3.8.11",
-    "gulp-watch": "^4.2.4",
-    "main-bower-files": "^2.7.0",
-    "mongodb": "^2.0.28"
-  }
+	"author": "yuharry <yhannya@gmail.com>",
+	"license": "BSD-2-Clause",
+	"dependencies": {
+		"cookie-parser": "^1.3.4",
+		"express": "^4.12.3",
+		"express-handlebars": "^2.0.1",
+		"gulp": "^3.8.11",
+		"gulp-watch": "^4.2.4",
+		"main-bower-files": "^2.7.0",
+		"mongodb": "^2.0.28"
+	}
 }
