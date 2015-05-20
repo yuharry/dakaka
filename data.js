@@ -6,7 +6,6 @@ module.exports = function() {
 	this.init = function(callback) {
 		var dkk_db = process.env.DKK_DB;
 		console.log('data.init');
-		
 		MongoClient.connect(
 			dkk_db,
 			function(err, database) {
@@ -32,7 +31,7 @@ module.exports = function() {
 
 			if (!res) {
 				userCol.insert(user, function(err, res) {
-					return callback(res);
+					return callback(res.ops);
 				});
 			} else {
 				return callback(res);
@@ -41,15 +40,22 @@ module.exports = function() {
 	};
 
 	this.getUser = function(u_id, callback) {
-		userCol.findOne({
-			_id: new ObjectId(u_id)
-		}, function(err, res) {
-			if (err) {
-				console.log(err);
-			} else {
-				return callback(res);
-			}
-		});
+		var _id
+		try {
+			id = new ObjectId(u_id);
+			userCol.findOne({
+				_id: new ObjectId(u_id)
+			}, function(err, res) {
+				if (err) {
+					console.log(err);
+				} else {
+					return callback(res);
+				}
+			});
+		} catch (err) {
+			console.log(err);
+		}
+
 	};
 
 	this.addActivity = function(u_id, activity, callback) {

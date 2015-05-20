@@ -54,16 +54,15 @@
 						method: 'post',
 						dataType: 'json',
 						data: {
-							id: resp:id,
 							name: resp.name,
-							email: resp.email,
+							email: resp.email
 						}
 					}).done(function(data) {
 						$.cookie('_type', 'fb', {
 							expires: 7,
 							path: '/'
 						});
-						$.cookie('_id', resp._id, {
+						$.cookie('_id', data._id, {
 							expires: 7,
 							path: '/'
 						});
